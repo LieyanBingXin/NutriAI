@@ -1,0 +1,29 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: nutri-ai
+  datasource:
+    url: jdbc:h2:mem:nutridb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+nutriai:
+  ai:
+    provider: openai-compat
+    api-key: ${AI_API_KEY:}
+    api-endpoint: ${AI_API_ENDPOINT:https://api.deepseek.com/v1}
+    model: ${AI_MODEL:deepseek-chat}
+
+logging:
+  level:
+    com.nutriai: ${LOG_LEVEL:INFO}

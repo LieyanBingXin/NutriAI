@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: nutriai
+    rootDir: backend
+    env: docker
+    dockerfilePath: Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        sync: false
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_API_ENDPOINT
+        value: https://api.deepseek.com/v1
+      - key: AI_MODEL
+        value: deepseek-chat

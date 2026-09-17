@@ -1,0 +1,7 @@
+target/
+!target/*.jar
+PROJECT_NOTES.md
+build_*.log
+run.log
+.idea/
+.vscode/

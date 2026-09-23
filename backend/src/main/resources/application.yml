@@ -1,11 +1,17 @@
 server:
   port: ${PORT:8080}
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: false
+        same-site: lax
 
 spring:
   application:
     name: nutri-ai
   datasource:
-    url: jdbc:h2:mem:nutridb
+    url: jdbc:h2:mem:nutridb;MODE=MYSQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -16,6 +22,12 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+    open-in-view: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
 
 nutriai:
   ai:
@@ -27,3 +39,4 @@ nutriai:
 logging:
   level:
     com.nutriai: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN

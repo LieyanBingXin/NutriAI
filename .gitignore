@@ -33,3 +33,13 @@ run.log
 .env
 # Office temp files
 ~$*
+
+# Temp / test files
+cookies.txt
+*.tmp.json
+login.json
+prof.json
+rec.json
+register.json
+server.py
+gen_ppt.py

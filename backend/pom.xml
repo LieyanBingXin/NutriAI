@@ -54,6 +54,12 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Security (登录认证) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- HTTP Client (调用 AI API) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

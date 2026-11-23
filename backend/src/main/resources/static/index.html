@@ -2,32 +2,419 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NutriAI - 智能营养推荐</title>
-    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="NutriAI — AI 驱动的个性化营养、膳食追踪与智能食谱推荐平台">
+    <meta name="theme-color" content="#F7F4EC" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#12160F" media="(prefers-color-scheme: dark)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="NutriAI">
+    <meta name="format-detection" content="telephone=no">
+    <title>NutriAI · 智能营养推荐</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <link rel="manifest" href="manifest.webmanifest?v=20261123">
+    <script>
+        // 尽早捕获安装事件：SW 已持久化时 beforeinstallprompt 可能在 defer 脚本执行前触发，错过则安装按钮只能走兜底
+        window.__deferredPwaPrompt = null;
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            window.__deferredPwaPrompt = e;
+        });
+    </script>
+    <script>
+        // 在首屏绘制前恢复深色模式，避免闪白
+        try {
+            if (localStorage.getItem('nutriai_dark_mode') === '1') {
+                document.documentElement.classList.add('dark');
+            }
+        } catch (e) { /* ignore */ }
+    </script>
+    <link rel="stylesheet" href="css/style.css?v=20261118a">
+    <link rel="stylesheet" href="css/assistant.css?v=20261118a">
+    <link rel="stylesheet" href="css/editorial.css?v=20261119b">
+    <script defer src="vendor/chart.umd.min.js"></script>
+    <script defer src="vendor/marked.min.js"></script>
 </head>
 <body>
+    <!-- 顶部栏（游客 / 移动端） -->
     <nav class="navbar">
-        <div class="nav-brand">
-            <span class="brand-icon">🍎</span>
+        <a class="nav-brand" href="/" aria-label="NutriAI 首页">
+            <span class="nav-logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F7F4EC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 21C7 17 3 13.5 3 8.7 3 6 5 4 7.5 4c1.5 0 3 .8 4.5 2.7C13.5 4.8 15 4 16.5 4 19 4 21 6 21 8.7c0 4.8-4 8.3-9 12.3z"/>
+                </svg>
+            </span>
             <span class="brand-name">NutriAI</span>
-        </div>
+        </a>
         <div class="nav-actions" id="navActions">
+            <button class="btn-ghost" onclick="enterGuestMode()">游客使用</button>
             <button class="btn-ghost" onclick="openAuthModal('login')">登录</button>
-            <button class="btn-ghost btn-ghost-primary" onclick="openAuthModal('register')">注册</button>
+            <button class="btn-ghost-primary" onclick="openAuthModal('register')">免费注册</button>
         </div>
     </nav>
 
-    <header class="header">
-        <h1>智能营养推荐</h1>
-        <p class="subtitle">AI 驱动的个性化饮食与食谱推荐</p>
+    <!-- 桌面侧边栏 -->
+    <aside class="side-nav" id="sideNav" aria-label="主导航">
+        <a class="side-brand" href="/" aria-label="NutriAI 首页">
+            <span class="side-logo">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F7F4EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 21C7 17 3 13.5 3 8.7 3 6 5 4 7.5 4c1.5 0 3 .8 4.5 2.7C13.5 4.8 15 4 16.5 4 19 4 21 6 21 8.7c0 4.8-4 8.3-9 12.3z"/>
+                </svg>
+            </span>
+            <span class="side-brand-text"><b>NutriAI</b><small>Nutrition Studio</small></span>
+        </a>
+
+        <div class="side-label">Workspace</div>
+        <nav class="side-links">
+            <button class="app-tab side-link active" data-target="assistant" onclick="switchMainTab('assistant')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span>AI 助手</span>
+            </button>
+            <button class="app-tab side-link" data-target="board" onclick="switchMainTab('board')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                <span>我的看板</span>
+            </button>
+            <button class="app-tab side-link" data-target="diary" onclick="switchMainTab('diary')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <span>食物日记</span>
+            </button>
+            <button class="app-tab side-link" data-target="profile" onclick="switchMainTab('profile')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+                <span>画像 &amp; 推荐</span>
+            </button>
+        </nav>
+
+        <div class="side-label">Library</div>
+        <nav class="side-links">
+            <button class="app-tab side-link" data-target="weight" onclick="switchMainTab('weight')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+                <span>体重追踪</span>
+            </button>
+            <button class="app-tab side-link" data-target="history" onclick="switchMainTab('history')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>
+                <span>推荐历史</span>
+            </button>
+            <button class="app-tab side-link" data-target="favorites" onclick="switchMainTab('favorites')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.3 5.8 21l1.6-7L2 9.7l7.1-.6L12 2l2.9 7.1 7.1.6-5.4 4.3 1.6 7z"/></svg>
+                <span>收藏食谱</span>
+            </button>
+            <button class="app-tab side-link" data-target="recipebook" onclick="switchMainTab('recipebook')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <span>食谱本</span>
+            </button>
+        </nav>
+
+        <div class="side-spacer"></div>
+        <div class="side-note">
+            <span class="side-note-k">TODAY'S NOTE</span>
+            <p>好好吃饭，是成本最低的自我照顾。</p>
+        </div>
+        <div class="side-user" id="sideUser"></div>
+    </aside>
+
+    <!-- Hero 区 -->
+    <header class="hero">
+        <div class="hero-grain" aria-hidden="true"></div>
+        <div class="hero-inner">
+            <div class="hero-copy">
+                <div class="hero-chip"><span class="dot"></span> AI · Personalized Nutrition</div>
+                <h1>把每一餐，<br><em>吃成你想要的样子。</em></h1>
+                <p class="subtitle">NutriAI 读取你的身体数据、口味与每日记录，把营养学变成一份可以照着吃的日常方案。</p>
+                <div class="hero-cta">
+                    <button class="btn-hero-primary" onclick="openAuthModal('register')">免费开始记录 <span>→</span></button>
+                    <button class="btn-hero-ghost" onclick="openAuthModal('login')">我已有账号</button>
+                    <button class="btn-hero-quiet" onclick="enterGuestMode()">先随便看看</button>
+                </div>
+                <div class="hero-proof">
+                    <div><strong>01</strong><span>记录一餐</span></div>
+                    <div><strong>02</strong><span>看见缺口</span></div>
+                    <div><strong>03</strong><span>吃对下一餐</span></div>
+                </div>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+                <div class="hv-main">
+                    <div class="hv-top"><span>今日营养 / Today</span><span class="hv-live">LIVE</span></div>
+                    <div class="hv-ring" style="--value:68">
+                        <div class="hv-ring-in"><strong>68<small>%</small></strong><span>热量目标</span></div>
+                    </div>
+                    <div class="hv-macros">
+                        <div><span>蛋白质</span><i><b style="width:74%"></b></i><em>74%</em></div>
+                        <div><span>碳水</span><i><b style="width:52%"></b></i><em>52%</em></div>
+                        <div><span>脂肪</span><i><b style="width:61%"></b></i><em>61%</em></div>
+                    </div>
+                </div>
+                <div class="hv-note">
+                    <span class="hv-note-k">AI NOTE</span>
+                    <p>午餐蛋白质偏低，加一份清蒸鱼或豆腐，晚餐会更从容。</p>
+                </div>
+                <div class="hv-pill">✦ 已为你避开香菜</div>
+            </div>
+        </div>
     </header>
 
-    <main class="container">
+    <main class="container app-shell">
+        <!-- 工作台页头 -->
+        <header class="page-topbar">
+            <div class="pt-left">
+                <span class="pt-kicker">NutriAI / Workspace</span>
+                <h1 id="pageTitle">AI 助手</h1>
+            </div>
+            <div class="pt-right">
+                <span class="pt-date" id="pageDate"></span>
+                <button class="pt-icon" id="themeToggle" onclick="toggleDarkMode()" title="切换深浅色" aria-label="切换深浅色">◐</button>
+            </div>
+        </header>
+
+        <!-- 应用标签栏（移动端底部导航） -->
+        <nav class="app-tabs" id="appTabs" style="display:none;" aria-label="功能导航">
+            <button class="app-tab active" data-target="assistant" onclick="switchMainTab('assistant')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                AI 助手
+            </button>
+            <button class="app-tab" data-target="board" onclick="switchMainTab('board')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                我的看板
+            </button>
+            <button class="app-tab" data-target="profile" onclick="switchMainTab('profile')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M8 15v-5M12 15v-9M16 15v-3"/></svg>
+                画像 & 推荐
+            </button>
+            <button class="app-tab" data-target="weight" onclick="switchMainTab('weight')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+                体重追踪
+            </button>
+            <button class="app-tab" data-target="diary" onclick="switchMainTab('diary')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                食物日记
+            </button>
+            <button class="app-tab" data-target="history" onclick="switchMainTab('history')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+                推荐历史
+            </button>
+            <button class="app-tab" data-target="favorites" onclick="switchMainTab('favorites')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.3 5.8 21l1.6-7L2 9.7l7.1-.6L12 2l2.9 7.1 7.1.6-5.4 4.3 1.6 7z"/></svg>
+                收藏食谱
+            </button>
+            <button class="app-tab" data-target="recipebook" onclick="switchMainTab('recipebook')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                食谱本
+            </button>
+            <button class="app-tab app-tab-more" data-target="more" onclick="openMoreSheet()" aria-label="更多功能">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                更多
+            </button>
+        </nav>
+
+        <!-- 应用视图: AI 助手（新默认主页） -->
+        <section class="app-view active" data-view="assistant">
+            <div class="assistant-wrap">
+                <div class="rail-backdrop" id="railBackdrop" onclick="closeStickerSheet()" aria-hidden="true"></div>
+                <div class="sticker-rail" id="stickerRail">
+                    <div class="rail-title">我的便利贴</div>
+                    <div class="rail-hint">📌 点击标签挂到输入框 · 拖到对话区直接发送</div>
+                    <div class="rail-add-row">
+                        <input type="text" class="custom-input" id="customInput" placeholder="＋ 写一个便利贴…" maxlength="80" onkeydown="if(!event.isComposing&&event.key==='Enter')submitCustomSticker()">
+                        <button class="btn-add-ok" onclick="submitCustomSticker()">✓</button>
+                    </div>
+                    <div class="rail-chips" id="railChips"></div>
+                    <div class="rail-empty" id="railEmpty" style="display:none;">
+                        <div class="rail-empty-emoji">🗂️</div>
+                        <div class="rail-empty-text">还是空的 — 去「我的看板」<br>拖几个标签过来吧</div>
+                    </div>
+                    <div class="rail-actions">
+                        <button class="btn-rail-action" onclick="addAllPicksToSession()">📎 全部挂到对话</button>
+                        <button class="btn-clear-rail" onclick="clearRail()">🗑️ 清空</button>
+                    </div>
+                </div>
+
+                <!-- 聊天主体 -->
+                <div class="chat-card">
+                    <div class="chat-head">
+                        <div class="chat-head-left">
+                            <span class="chat-avatar" aria-hidden="true">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21C7 17 3 13.5 3 8.7 3 6 5 4 7.5 4c1.5 0 3 .8 4.5 2.7C13.5 4.8 15 4 16.5 4 19 4 21 6 21 8.7c0 4.8-4 8.3-9 12.3z"/></svg>
+                            </span>
+                            <div>
+                                <div class="chat-title">NutriAI 助手</div>
+                                <div class="chat-sub">说人话就行 —— 记体重、记饮食、推荐、冰箱、喜好…</div>
+                            </div>
+                        </div>
+                        <div class="chat-quick-actions">
+                            <button class="chat-clear-btn rail-sheet-toggle" onclick="toggleStickerSheet()" title="便利贴">📌 便利贴</button>
+                            <button class="chat-clear-btn" onclick="exportChatHistory()" title="导出聊天记录">📥 导出</button>
+                            <button class="chat-clear-btn" onclick="clearChatHistory()" title="清空聊天历史">🗑️ 清空</button>
+                            <button class="chat-clear-btn" onclick="toggleDarkMode()" title="切换暗色模式">🌓 暗色</button>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-label="对话消息">
+                        <div class="chat-bubble ai">
+                            <div class="bubble-head">🤖 NutriAI</div>
+                            <div class="bubble-body">
+                                在呢 👋 今天想干嘛？直接说人话就行——比如：<br><br>
+                                •「体重 68.2 kg」<br>
+                                •「吃了一碗米饭 + 番茄炒蛋」<br>
+                                •「我家有鸡胸肉、西兰花、鸡蛋」<br>
+                                •「今晚吃什么」<br>
+                                •「我喜欢番茄，但讨厌香菜」<br>
+                                •「今天缺口怎么样」
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-tags-panel" id="chatQuickActions">
+                        <div class="qa-group-label">⚡ 基础功能 · 点一下挂到对话 · 拖进对话栏直接发送</div>
+                        <div class="qa-chips">
+                            <button class="qa-chip" draggable="true" ondragstart="onQuickTagDragStart(event)" data-kind="custom" data-key="帮我规划一周食谱" onclick="mountQuickTag(this)">🗓️ 一周食谱</button>
+                            <button class="qa-chip" draggable="true" ondragstart="onQuickTagDragStart(event)" data-kind="custom" data-key="今天缺口怎么样" onclick="mountQuickTag(this)">📊 查看缺口</button>
+                            <button class="qa-chip" draggable="true" ondragstart="onQuickTagDragStart(event)" data-kind="custom" data-key="冰箱里有什么能做的" onclick="mountQuickTag(this)">🧊 冰箱做菜</button>
+                            <button class="qa-chip" draggable="true" ondragstart="onQuickTagDragStart(event)" data-kind="custom" data-key="推荐晚餐" onclick="mountQuickTag(this)">🍽️ 推荐晚餐</button>
+                            <button class="qa-chip" draggable="true" ondragstart="onQuickTagDragStart(event)" data-kind="custom" data-key="帮我记一下今天的饮食" onclick="mountQuickTag(this)">📝 记饮食</button>
+                            <button class="qa-chip" draggable="true" ondragstart="onQuickTagDragStart(event)" data-kind="custom" data-key="体重 68.2 kg" onclick="mountQuickTag(this)">⚖️ 记体重</button>
+                        </div>
+                    </div>
+
+                    <div class="chat-session-tags" id="sessionTagsBar">
+                        <div class="st-label">📎 对话挂件</div>
+                        <div class="st-chips" id="sessionTagsChips"></div>
+                        <button class="st-clear" onclick="clearSessionTags()" style="display:none;">清空</button>
+                    </div>
+
+                    <div class="voice-recording" id="voiceRecording" style="display:none;">
+                        <span class="vr-pulse"></span>
+                        <span class="vr-text">正在聆听...</span>
+                        <button class="vr-stop" onclick="stopVoiceRecording()">✕ 停止</button>
+                    </div>
+
+                    <div class="chat-input-wrap" id="chatInputWrap">
+                        <textarea id="chatInput" rows="2" placeholder="说点什么…例如：体重 68.2kg，早餐鸡蛋+牛奶" onkeydown="onChatKey(event)"></textarea>
+                        <div class="chat-input-actions">
+                            <button class="btn-mic-chat" id="btnMic" onclick="chatVoice()">🎤</button>
+                            <button class="btn-primary" onclick="sendChat()">发送</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 应用视图: 我的看板（便利贴） -->
+        <section class="app-view" data-view="board">
+            <div class="board-wrap">
+                <div class="sticker-rail rail-board" id="stickerRailBoard">
+                    <div class="rail-title">📌 我的便利贴</div>
+                    <div class="rail-hint">从右侧看板拖标签进来 · 点击发给 AI</div>
+                    <div class="rail-add-row">
+                        <input type="text" class="custom-input" id="customInputBoard" placeholder="＋ 写一个便利贴…" maxlength="80" onkeydown="if(!event.isComposing&&event.key==='Enter')submitCustomStickerBoard()">
+                        <button class="btn-add-ok" onclick="submitCustomStickerBoard()">✓</button>
+                    </div>
+                    <div class="rail-chips" id="railChipsBoard"></div>
+                    <div class="rail-empty" id="railEmptyBoard" style="display:none;">
+                        <div class="rail-empty-emoji">🗂️</div>
+                        <div class="rail-empty-text">还是空的 — 从右侧看板<br>拖几个标签过来吧</div>
+                    </div>
+                    <div class="rail-actions">
+                        <button class="btn-rail-action" onclick="addAllPicksToSession()">📎 全部挂到对话</button>
+                        <button class="btn-clear-rail" onclick="clearRail()">🗑️ 清空</button>
+                    </div>
+                </div>
+                <div class="board-grid">
+                <div class="sticker-board profile-summary board-full" data-board="profileSummary">
+                    <div class="board-title">
+                        <span class="board-ico">🧬</span> 基础信息
+                        <button class="board-edit-btn" onclick="switchMainTab('profile')">✏️ 编辑</button>
+                    </div>
+                    <div class="board-subtitle">性别、年龄、身高体重、目标、口味、营养目标、地区</div>
+                    <div class="board-items" id="boardProfileSummary"></div>
+                </div>
+                <div class="sticker-board health board-full" data-board="health">
+                    <div class="board-title">
+                        <span class="board-ico">🩺</span> 身体状态
+                        <button class="btn-plus-sticker" onclick="addStickerInline('health')">+</button>
+                    </div>
+                    <div class="board-subtitle">疾病 · 身体状况，AI 会据此调整建议</div>
+                    <div class="board-items" id="boardHealth"></div>
+                </div>
+                <div class="board-bulk-row board-full">
+                    <input type="text" class="custom-input" id="bulkAddInput" placeholder="📋 批量添加：用逗号分隔，如「鸡胸肉, 西兰花, 牛肉」" onkeydown="if(event.key==='Enter')bulkAddStickers()">
+                    <select id="bulkAddKind" class="custom-input" style="width:auto;min-width:110px;">
+                        <option value="likes">💚 喜欢</option>
+                        <option value="dislikes">🚫 厌恶</option>
+                        <option value="fridge">🧊 冰箱</option>
+                    </select>
+                    <button class="btn-add-ok" onclick="bulkAddStickers()">批量加</button>
+                </div>
+                <div class="sticker-board" data-board="likes">
+                    <div class="board-title">
+                        <span class="board-ico">💚</span> 喜欢吃（推荐优先）
+                        <span class="board-count" id="countLikes"></span>
+                        <button class="btn-plus-sticker" onclick="addStickerInline('likes')">+</button>
+                    </div>
+                    <div class="board-items" id="boardLikes"></div>
+                </div>
+                <div class="sticker-board dislike" data-board="dislikes">
+                    <div class="board-title">
+                        <span class="board-ico">🚫</span> 不喜欢 / 过敏 / 忌口
+                        <span class="board-count" id="countDislikes"></span>
+                        <button class="btn-plus-sticker" onclick="addStickerInline('dislikes')">+</button>
+                    </div>
+                    <div class="board-items" id="boardDislikes"></div>
+                </div>
+                <div class="sticker-board fridge" data-board="fridge">
+                    <div class="board-title">
+                        <span class="board-ico">🧊</span> 冰箱里有
+                        <span class="board-count" id="countFridge"></span>
+                        <button class="btn-plus-sticker" onclick="addStickerInline('fridge')">+</button>
+                        <button class="btn-clear-mini" onclick="clearAllFridge()">清空</button>
+                    </div>
+                    <div class="board-items" id="boardFridge"></div>
+                </div>
+                <div class="sticker-board persona" data-board="persona">
+                    <div class="board-title">
+                        <span class="board-ico">🎭</span> AI 角色设定
+                        <span class="board-count" id="countPersona"></span>
+                        <button class="btn-plus-sticker" onclick="addStickerInline('persona')">+</button>
+                        <button class="btn-clear-mini" onclick="clearAllPersona()">清空</button>
+                    </div>
+                    <div class="board-items" id="boardPersona"></div>
+                </div>
+                <div class="sticker-board ai-recommend board-full" data-board="gap">
+                    <div class="board-title">
+                        <span class="board-ico">🤖</span> AI 营养提醒
+                        <span class="board-subtitle">基于你的饮食记录，AI 自动分析</span>
+                    </div>
+                    <div class="board-items" id="boardGap"></div>
+                    <div class="board-updated" id="gapUpdated"></div>
+                </div>
+            </div>
+            </div>
+        </section>
+
+        <!-- 应用视图: AI 健康方案 -->
+        <section class="app-view" data-view="profile">
+        <!-- 信息填写 -->
         <section class="form-section">
             <div class="section-header">
-                <h2>填写您的信息</h2>
-                <button class="btn-link" id="saveProfileBtn" style="display:none;">💾 保存为我的画像</button>
+                <div class="section-title">
+                    <span class="section-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.5 14 17 22l-5-2-5 2 1.5-8"/></svg>
+                    </span>
+                    <div>
+                        <div class="section-kicker">Profile</div>
+                        <h2>填写您的信息</h2>
+                    </div>
+                </div>
+                <div class="form-header-actions">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="streamToggle" checked>
+                        <span>流式输出</span>
+                    </label>
+                    <label class="toggle-label">
+                        <input type="checkbox" id="prefToggle" checked>
+                        <span>偏好影响</span>
+                    </label>
+                    <button class="btn-link" id="saveProfileBtn" style="display:none;">保存为我的画像</button>
+                </div>
             </div>
 
             <form id="profileForm">
@@ -40,22 +427,35 @@
                             <option value="OTHER">其他</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label>年龄</label>
                         <input type="number" name="age" min="1" max="150" value="25" required>
                     </div>
-
                     <div class="form-group">
                         <label>身高 (cm)</label>
                         <input type="number" name="heightCm" step="0.1" min="30" max="250" value="170" required>
                     </div>
-
                     <div class="form-group">
                         <label>体重 (kg)</label>
                         <input type="number" name="weightKg" step="0.1" min="2" max="300" value="65" required>
                     </div>
-
+                    <div class="form-group">
+                        <label>所在地区</label>
+                        <select name="region" id="regionSelect">
+                            <option value="">未指定</option>
+                            <option value="华北（北京/天津/河北）">华北（北京/天津/河北）</option>
+                            <option value="东北（辽宁/吉林/黑龙江）">东北（辽宁/吉林/黑龙江）</option>
+                            <option value="华东（上海/江苏/浙江/安徽/福建/江西/山东）">华东</option>
+                            <option value="华中（河南/湖北/湖南）">华中（河南/湖北/湖南）</option>
+                            <option value="华南（广东/广西/海南）">华南（广东/广西/海南）</option>
+                            <option value="西南（重庆/四川/贵州/云南）">西南（川渝/云贵）</option>
+                            <option value="西北（陕西/甘肃/青海/新疆）">西北</option>
+                            <option value="内蒙古">内蒙古</option>
+                            <option value="西藏">西藏</option>
+                            <option value="台湾/香港/澳门">港澳台</option>
+                            <option value="海外">海外</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label>活动水平</label>
                         <select name="activityLevel">
@@ -66,7 +466,6 @@
                             <option value="VERY_ACTIVE">非常活跃</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label>健康目标</label>
                         <select name="healthGoal">
@@ -77,18 +476,38 @@
                             <option value="IMPROVE_HEALTH">改善健康</option>
                         </select>
                     </div>
-
                     <div class="form-group">
-                        <label>口味偏好</label>
-                        <select name="tastePreference">
-                            <option value="LIGHT">清淡</option>
-                            <option value="SALTY">咸鲜</option>
-                            <option value="SPICY">辛辣</option>
-                            <option value="SWEET">甜食</option>
-                            <option value="SOUR">酸味</option>
-                            <option value="UMAMI">鲜香</option>
-                            <option value="MIXED" selected>混合</option>
-                        </select>
+                        <label>口味偏好（可多选）</label>
+                        <div class="check-group" id="tastePrefGroup">
+                            <label class="check-chip"><input type="checkbox" name="tastePreference" value="LIGHT">清淡</label>
+                            <label class="check-chip"><input type="checkbox" name="tastePreference" value="SALTY">咸鲜</label>
+                            <label class="check-chip"><input type="checkbox" name="tastePreference" value="SPICY">辛辣</label>
+                            <label class="check-chip"><input type="checkbox" name="tastePreference" value="SWEET">甜食</label>
+                            <label class="check-chip"><input type="checkbox" name="tastePreference" value="SOUR">酸味</label>
+                            <label class="check-chip"><input type="checkbox" name="tastePreference" value="UMAMI">鲜香</label>
+                            <label class="check-chip"><input type="checkbox" name="tastePreference" value="MIXED">混合</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section-title">🥗 每日营养目标 <button type="button" class="btn-sm btn-outline" id="calcGoalsBtn" onclick="loadRecommendedGoals()">计算推荐目标</button></div>
+                <div id="goalCalcStatus" style="font-size:0.8rem;color:var(--accent);margin-bottom:8px;display:none;"></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>每日热量 (kcal)</label>
+                        <input type="number" id="dailyCalorieGoal" step="10" min="800" max="5000" placeholder="自动计算">
+                    </div>
+                    <div class="form-group">
+                        <label>蛋白质 (g)</label>
+                        <input type="number" id="proteinGoal" step="0.1" min="20" max="300" placeholder="自动计算">
+                    </div>
+                    <div class="form-group">
+                        <label>碳水 (g)</label>
+                        <input type="number" id="carbsGoal" step="0.1" min="50" max="600" placeholder="自动计算">
+                    </div>
+                    <div class="form-group">
+                        <label>脂肪 (g)</label>
+                        <input type="number" id="fatGoal" step="0.1" min="10" max="200" placeholder="自动计算">
                     </div>
                 </div>
 
@@ -96,47 +515,385 @@
                     <label>食物喜好 (逗号分隔)</label>
                     <input type="text" id="foodPrefs" placeholder="例如: 鸡肉, 米饭, 西兰花">
                 </div>
-
                 <div class="form-group full-width">
                     <label>食物忌讳 / 过敏 (逗号分隔)</label>
                     <input type="text" id="foodAllergies" placeholder="例如: 花生, 海鲜">
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary" id="submitBtn">✨ 生成推荐</button>
+                    <button type="submit" class="btn-primary" id="submitBtn">生成我的健康方案</button>
                     <button type="reset" class="btn-secondary">重置</button>
                 </div>
             </form>
         </section>
 
+        <!-- AI 实时回复 -->
+        <section class="stream-section" id="streamSection" style="display:none;">
+            <div class="stream-header">
+                <div class="section-title">
+                    <span class="section-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>
+                    </span>
+                    <div>
+                        <div class="section-kicker">Live</div>
+                        <h2>AI 实时回复</h2>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <span class="stream-status" id="streamStatus">连接中...</span>
+                    <button class="btn-primary btn-sm" id="btnStructView" style="display:none;" onclick="loadStructuredResult()">查看结构化食谱</button>
+                </div>
+            </div>
+            <div class="stream-content markdown-body" id="streamContent"></div>
+        </section>
+
+        <!-- 推荐结果 -->
         <section class="result-section" id="resultSection" style="display:none;">
             <div class="result-header">
-                <h2>推荐结果</h2>
+                <div class="section-title">
+                    <span class="section-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M8 15v-5M12 15v-9M16 15v-3"/></svg>
+                    </span>
+                    <div>
+                        <div class="section-kicker">Result</div>
+                        <h2>推荐结果</h2>
+                    </div>
+                </div>
                 <span class="ai-badge" id="aiBadge"></span>
             </div>
 
             <div class="summary-card" id="summaryCard"></div>
-
             <div class="nutrition-card" id="nutritionCard"></div>
-
             <div class="recipes-container" id="recipesContainer"></div>
-
             <div class="tips-card" id="tipsCard"></div>
         </section>
+        </section>
 
+        <!-- 应用视图: 体重追踪 -->
+        <section class="app-view" data-view="weight">
+        <!-- 体重追踪 -->
+        <section class="weight-section" id="weightSection" style="display:none;">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>
+                    </span>
+                    <div>
+                        <div class="section-kicker">Weight</div>
+                        <h2>体重追踪</h2>
+                    </div>
+                </div>
+                <button class="btn-secondary btn-sm" onclick="showWeightForm()">添加记录</button>
+                <button class="btn-secondary btn-sm" onclick="downloadWeightCsv()">📥 CSV导出</button>
+            </div>
+
+            <div class="weight-stats" id="weightStats"></div>
+            <div class="chart-container">
+                <canvas id="weightChart"></canvas>
+            </div>
+
+            <div class="weight-add-form" id="weightAddForm" style="display:none;">
+                <div class="form-row-inline">
+                    <div class="form-group">
+                        <label>体重 (kg)</label>
+                        <input type="number" id="newWeight" step="0.1" min="1" max="300">
+                    </div>
+                    <div class="form-group">
+                        <label>日期</label>
+                        <input type="date" id="newWeightDate">
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <input type="text" id="newWeightNote" placeholder="可选">
+                    </div>
+                    <div class="form-group inline-actions">
+                        <button class="btn-primary" onclick="addWeightRecord()">保存</button>
+                        <button class="btn-secondary" onclick="hideWeightForm()">取消</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="weight-list" id="weightList"></div>
+        </section>
+        </section>
+
+        <!-- 应用视图: 食物日记 -->
+        <section class="app-view" data-view="diary">
+        <!-- AI 教练面板 -->
+        <section class="coach-panel" id="coachPanel" style="display:none;">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </span>
+                    <div>
+                        <div class="section-kicker">AI Coach</div>
+                        <h2>AI 教练</h2>
+                    </div>
+                </div>
+                <div class="coach-header-actions">
+                    <span id="profileCompletion" class="completion-pill" style="display:none" title="画像完成度"></span>
+                    <button class="btn-secondary btn-sm" onclick="loadCoachPanel()">刷新</button>
+                </div>
+            </div>
+
+            <div class="coach-grid">
+                <div class="card coach-card coach-gap">
+                    <div class="coach-card-head">营养缺口雷达</div>
+                    <div id="coachGap" class="coach-gap">暂无数据，先去记几餐。</div>
+                </div>
+
+                <div class="card coach-card coach-feedback">
+                    <div class="coach-card-head">今日实时反馈</div>
+                    <div id="coachFeedback" class="coach-feedback"></div>
+                    <div class="coach-quick">
+                        <input type="text" id="coachQuickMeal" placeholder="刚才吃了什么？告诉教练…">
+                        <button class="btn-primary btn-sm" onclick="askCoach()">问教练</button>
+                    </div>
+                </div>
+
+                <div class="card coach-card coach-fridge">
+                    <div class="coach-card-head">冰箱有料 · 今晚做什么</div>
+                    <div class="coach-quick">
+                        <input type="text" id="coachFridgeInput" placeholder="输入家里食材，逗号分隔，如：鸡胸肉,西兰花,鸡蛋">
+                        <button class="btn-primary btn-sm" onclick="generateFridge()">用冰箱做晚饭</button>
+                    </div>
+                    <div id="coachFridgeResult" class="coach-fridge-result"></div>
+                </div>
+
+                <div class="card coach-card coach-goal">
+                    <div class="coach-card-head">目标进度总览</div>
+                    <div id="goalProgress" class="goal-progress">加载目标数据中…</div>
+                </div>
+            </div>
+        </section>
+        <!-- 食物日记 -->
+        <section class="food-diary-section" id="foodDiarySection" style="display:none;">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18"/><path d="M12 11v9"/><path d="M6 11V7a6 6 0 0 1 12 0v4"/></svg>
+                    </span>
+                    <div>
+                        <div class="section-kicker">Diary</div>
+                        <h2>食物日记</h2>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <input type="date" id="fdFilterDate" onchange="changeDiaryDate()">
+                    <button class="btn-secondary btn-sm" onclick="showFoodDiaryForm()">添加食物</button>
+                    <button class="btn-secondary btn-sm" onclick="downloadDiaryCsv()">📥 CSV导出</button>
+                </div>
+            </div>
+
+            <div class="diary-summary" id="diarySummary"></div>
+
+            <div class="weekly-report-section" id="weeklyReportSection" style="display:none;">
+                <div class="weekly-report-head">
+                    <span class="weekly-icon">📊</span>
+                    <h3>本周饮食报告</h3>
+                    <span class="weekly-date-range" id="weeklyDateRange"></span>
+                </div>
+                <div class="weekly-stats" id="weeklyStats"></div>
+                <div class="chart-row">
+                    <div class="chart-container weekly-chart" id="calorieChartContainer">
+                        <h4 class="chart-title">每日热量摄入</h4>
+                        <canvas id="weeklyCalorieChart"></canvas>
+                    </div>
+                    <div class="chart-container weekly-chart" id="nutrientChartContainer">
+                        <h4 class="chart-title">营养素趋势</h4>
+                        <canvas id="weeklyNutrientChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card weekly-compare-card" id="weeklyCompareCard" style="display:none;">
+                <div class="coach-card-head">📅 本周 vs 上周 摄入对比</div>
+                <div id="weeklyCompare"></div>
+            </div>
+
+            <div class="food-diary-add-form" id="foodDiaryAddForm" style="display:none;">
+                <h4 id="foodDiaryFormTitle">添加食物</h4>
+                <input type="hidden" id="fdEditId">
+                <div class="ai-recognize-row">
+                    <input type="text" id="fdAiInput" placeholder="🤖 AI 识别：描述你吃了什么，如「一碗米饭200g + 番茄炒蛋150g」">
+                    <button type="button" class="btn-mic" onclick="speakToDiary()" title="语音记餐：说出你吃了什么">🎤</button>
+                    <button type="button" class="btn-ai-recognize" onclick="recognizeFood()">AI 识别</button>
+                </div>
+                <div class="form-row-inline">
+                    <div class="form-group">
+                        <label>食物名称</label>
+                        <input type="text" id="fdFoodName" placeholder="例如: 白米饭">
+                    </div>
+                    <div class="form-group">
+                        <label>餐次</label>
+                        <select id="fdMealType">
+                            <option value="早餐">早餐</option>
+                            <option value="午餐">午餐</option>
+                            <option value="晚餐">晚餐</option>
+                            <option value="加餐">加餐</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>份量 (g)</label>
+                        <input type="number" id="fdAmount" step="1" min="0" placeholder="可选">
+                    </div>
+                    <div class="form-group">
+                        <label>热量 (kcal)</label>
+                        <input type="number" id="fdCalories" step="0.1" min="0" placeholder="可选">
+                    </div>
+                    <div class="form-group">
+                        <label>蛋白质 (g)</label>
+                        <input type="number" id="fdProtein" step="0.1" min="0" placeholder="可选">
+                    </div>
+                    <div class="form-group">
+                        <label>碳水 (g)</label>
+                        <input type="number" id="fdCarbs" step="0.1" min="0" placeholder="可选">
+                    </div>
+                    <div class="form-group">
+                        <label>脂肪 (g)</label>
+                        <input type="number" id="fdFat" step="0.1" min="0" placeholder="可选">
+                    </div>
+                    <div class="form-group">
+                        <label>日期</label>
+                        <input type="date" id="fdDate">
+                    </div>
+                    <div class="form-group inline-actions">
+                        <button class="btn-primary" onclick="saveFoodDiary()">保存</button>
+                        <button class="btn-secondary" onclick="cancelFoodDiary()">取消</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diary-list" id="diaryList"></div>
+        </section>
+        </section>
+
+        <!-- 应用视图: 推荐历史 -->
+        <section class="app-view" data-view="history">
+        <!-- 推荐历史 -->
         <section class="history-section" id="historySection" style="display:none;">
             <div class="section-header">
-                <h2>📚 我的推荐历史</h2>
-                <div class="history-pagination" id="historyPagination"></div>
+                <div class="section-title">
+                    <span class="section-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>
+                    </span>
+                    <div>
+                        <div class="section-kicker">History</div>
+                        <h2>我的推荐历史</h2>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <input type="text" id="historySearch" placeholder="🔍 搜索..." oninput="filterHistory()" style="width:150px;padding:9px 12px;border:1px solid var(--input-border);border-radius:9px;background:var(--input-bg);font-size:.85rem;outline:none;font-family:inherit;">
+                    <div class="history-pagination" id="historyPagination"></div>
+                </div>
             </div>
             <div class="history-list" id="historyList"></div>
         </section>
+        </section>
+
+        <!-- 应用视图: 收藏食谱 -->
+        <section class="app-view" data-view="favorites">
+        <div class="rail-page-wrap">
+            <div class="sticker-rail" id="stickerRailFavorites">
+                <div class="rail-title">📌 我的便利贴</div>
+                <div class="rail-hint">从其他页面拖标签进来 · 拖到对话区发送</div>
+                <div class="rail-add-row">
+                    <input type="text" class="custom-input" id="customInputFavorites" placeholder="＋ 写一个便利贴…" maxlength="80" onkeydown="if(!event.isComposing&&event.key==='Enter')addCustomSticker('customInputFavorites')">
+                    <button class="btn-add-ok" onclick="addCustomSticker('customInputFavorites')">✓</button>
+                </div>
+                <div class="rail-chips" id="railChipsFavorites"></div>
+                <div class="rail-empty" id="railEmptyFavorites" style="display:none;">
+                    <div class="rail-empty-emoji">🗂️</div>
+                    <div class="rail-empty-text">还是空的 — 去「我的看板」<br>拖几个标签过来吧</div>
+                </div>
+                <div class="rail-actions">
+                    <button class="btn-rail-action" onclick="addAllPicksToSession()">📎 全部挂到对话</button>
+                    <button class="btn-clear-rail" onclick="clearRail()">🗑️ 清空</button>
+                </div>
+            </div>
+            <div class="rail-page-main">
+            <!-- 收藏食谱 -->
+            <section class="favorites-section" id="favoritesSection" style="display:none;">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c07a12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.3 5.8 21l1.6-7L2 9.7l7.1-.6L12 2l2.9 7.1 7.1.6-5.4 4.3 1.6 7z"/></svg>
+                        </span>
+                        <div>
+                            <div class="section-kicker">Favorites</div>
+                            <h2>收藏食谱</h2>
+                        </div>
+                    </div>
+                    <button class="btn-secondary btn-sm" onclick="loadFavorites(0)">刷新</button>
+                </div>
+                <div class="favorites-list" id="favoritesList"></div>
+                <div class="favorites-pagination" id="favoritesPagination"></div>
+            </section>
+            </div>
+        </div>
+        </section>
+
+        <!-- 应用视图: 食谱本 -->
+        <section class="app-view" data-view="recipebook">
+        <div class="rail-page-wrap">
+            <div class="sticker-rail" id="stickerRailRecipebook">
+                <div class="rail-title">📌 我的便利贴</div>
+                <div class="rail-hint">从其他页面拖标签进来 · 拖到对话区发送</div>
+                <div class="rail-add-row">
+                    <input type="text" class="custom-input" id="customInputRecipebook" placeholder="＋ 写一个便利贴…" maxlength="80" onkeydown="if(!event.isComposing&&event.key==='Enter')addCustomSticker('customInputRecipebook')">
+                    <button class="btn-add-ok" onclick="addCustomSticker('customInputRecipebook')">✓</button>
+                </div>
+                <div class="rail-chips" id="railChipsRecipebook"></div>
+                <div class="rail-empty" id="railEmptyRecipebook" style="display:none;">
+                    <div class="rail-empty-emoji">🗂️</div>
+                    <div class="rail-empty-text">还是空的 — 去「我的看板」<br>拖几个标签过来吧</div>
+                </div>
+                <div class="rail-actions">
+                    <button class="btn-rail-action" onclick="addAllPicksToSession()">📎 全部挂到对话</button>
+                    <button class="btn-clear-rail" onclick="clearRail()">🗑️ 清空</button>
+                </div>
+            </div>
+            <div class="rail-page-main">
+            <section class="recipebook-section" id="recipebookSection" style="display:none;">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        </span>
+                        <div>
+                            <div class="section-kicker">My Recipe Book</div>
+                            <h2>我的食谱本</h2>
+                        </div>
+                    </div>
+                    <div class="recipebook-toolbar">
+                        <select id="recipebookMealFilter" onchange="loadRecipeBook(0)" class="custom-select">
+                            <option value="">全部餐别</option>
+                            <option value="breakfast">早餐</option>
+                            <option value="lunch">午餐</option>
+                            <option value="dinner">晚餐</option>
+                            <option value="snack">加餐</option>
+                        </select>
+                        <button class="btn-secondary btn-sm" onclick="loadRecipeBook(0)">刷新</button>
+                    </div>
+                </div>
+                <div class="recipebook-list" id="recipebookList"></div>
+                <div class="recipebook-pagination" id="recipebookPagination"></div>
+            </section>
+            </div>
+        </div>
+        </section>
     </main>
 
-    <div id="authModal" class="modal" style="display:none;">
+    <!-- 登录 / 注册 -->
+    <div id="authModal" class="modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
         <div class="modal-backdrop" onclick="closeAuthModal()"></div>
         <div class="modal-content">
-            <button class="modal-close" onclick="closeAuthModal()">✕</button>
+            <button class="modal-close" onclick="closeAuthModal()" aria-label="关闭">✕</button>
+            <div class="modal-brand">
+                <span class="nav-logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#04150d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21C7 17 3 13.5 3 8.7 3 6 5 4 7.5 4c1.5 0 3 .8 4.5 2.7C13.5 4.8 15 4 16.5 4 19 4 21 6 21 8.7c0 4.8-4 8.3-9 12.3z"/></svg></span>
+                <h3 id="authModalTitle">NutriAI</h3>
+            </div>
             <div class="modal-tabs">
                 <button class="modal-tab active" data-tab="login" onclick="switchAuthTab('login')">登录</button>
                 <button class="modal-tab" data-tab="register" onclick="switchAuthTab('register')">注册</button>
@@ -152,6 +909,8 @@
                 </div>
                 <button type="submit" class="btn-primary btn-full">登录</button>
                 <div class="form-error" id="loginError"></div>
+                <div class="auth-demo-hint">演示账号：<b>demo2026</b> / <b>NutriAI@123</b></div>
+                <button type="button" class="btn-link auth-link" onclick="openForgotPassword()">忘记密码？</button>
             </form>
             <form id="registerForm" class="auth-form" style="display:none;">
                 <div class="form-group">
@@ -159,7 +918,7 @@
                     <input type="text" name="username" required minlength="3" maxlength="50">
                 </div>
                 <div class="form-group">
-                    <label>邮箱 (可选)</label>
+                    <label>邮箱 (用于验证和找回密码)</label>
                     <input type="email" name="email">
                 </div>
                 <div class="form-group">
@@ -172,17 +931,109 @@
         </div>
     </div>
 
+    <!-- 找回密码 -->
+    <div id="forgotModal" class="modal" style="display:none;">
+        <div class="modal-backdrop" onclick="closeForgotModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeForgotModal()">✕</button>
+            <div class="modal-brand">
+                <span class="nav-logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#04150d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+                <h3>找回密码</h3>
+            </div>
+            <p class="modal-hint">输入您注册时使用的邮箱，我们将发送重置链接到您的邮箱。</p>
+            <form id="forgotForm" class="auth-form">
+                <div class="form-group">
+                    <label>邮箱</label>
+                    <input type="email" id="forgotEmail" required placeholder="your@email.com">
+                </div>
+                <button type="submit" class="btn-primary btn-full">发送重置链接</button>
+                <div class="form-error" id="forgotError"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 通用详情弹窗（收藏食谱等） -->
+    <div id="detailModal" class="modal detail-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+        <div class="modal-backdrop" onclick="closeDetailModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeDetailModal()" aria-label="关闭">✕</button>
+            <h3 id="detailModalTitle" class="detail-title"></h3>
+            <div id="detailModalBody" class="detail-body"></div>
+        </div>
+    </div>
+
+    <!-- 通用确认弹窗（替代浏览器原生 confirm） -->
+    <div id="confirmModal" class="modal confirm-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+        <div class="modal-backdrop" onclick="closeConfirmModal()"></div>
+        <div class="modal-content">
+            <h3 id="confirmModalTitle" class="detail-title"></h3>
+            <p id="confirmModalBody" class="confirm-body"></p>
+            <div class="confirm-actions">
+                <button type="button" class="btn-secondary" onclick="closeConfirmModal()">取消</button>
+                <button type="button" class="btn-primary btn-danger" id="confirmModalOk" onclick="confirmOk()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通用输入弹窗（替代浏览器原生 prompt） -->
+    <div id="promptModal" class="modal prompt-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="promptModalTitle">
+        <div class="modal-backdrop" onclick="closePromptModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closePromptModal()" aria-label="关闭">✕</button>
+            <h3 id="promptModalTitle" class="detail-title"></h3>
+            <input type="text" id="promptModalInput" class="form-input" placeholder="" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();promptOk();}">
+            <div class="confirm-actions">
+                <button type="button" class="btn-secondary" onclick="closePromptModal()">取消</button>
+                <button type="button" class="btn-primary" id="promptModalOk" onclick="promptOk()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动端「更多」面板 -->
+    <div class="more-sheet" id="moreSheet" aria-hidden="true">
+        <div class="more-backdrop" onclick="closeMoreSheet()"></div>
+        <div class="more-panel" role="dialog" aria-modal="true" aria-label="更多功能">
+            <div class="more-grabber"></div>
+            <div class="more-head">
+                <span class="more-kicker">MORE</span>
+                <b>更多功能</b>
+            </div>
+            <div class="more-grid">
+                <button class="more-item" data-target="profile" onclick="moreGo('profile')"><span>🧬</span>画像 &amp; 推荐</button>
+                <button class="more-item" data-target="history" onclick="moreGo('history')"><span>🕘</span>推荐历史</button>
+                <button class="more-item" data-target="favorites" onclick="moreGo('favorites')"><span>⭐</span>收藏食谱</button>
+                <button class="more-item" data-target="recipebook" onclick="moreGo('recipebook')"><span>📖</span>我的食谱本</button>
+            </div>
+            <div class="more-foot">
+                <button class="more-ghost" onclick="closeMoreSheet();installPwa()">⬇ 安装到主屏幕</button>
+                <button class="more-ghost" onclick="toggleDarkMode();closeMoreSheet()">◐ 切换深浅色</button>
+                <button class="more-ghost" onclick="closeMoreSheet();logout()">↩ 退出登录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PWA 安装提示 -->
+    <div class="pwa-banner" id="pwaBanner" hidden>
+        <div class="pwa-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F7F4EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21C7 17 3 13.5 3 8.7 3 6 5 4 7.5 4c1.5 0 3 .8 4.5 2.7C13.5 4.8 15 4 16.5 4 19 4 21 6 21 8.7c0 4.8-4 8.3-9 12.3z"/></svg>
+        </div>
+        <div class="pwa-copy"><b>把 NutriAI 装到手机</b><span>像 App 一样打开，离线也能看</span></div>
+        <button class="pwa-install" onclick="installPwa()">安装</button>
+        <button class="pwa-close" onclick="dismissPwa()" aria-label="关闭">×</button>
+    </div>
+
     <div id="loadingOverlay" class="loading-overlay" style="display:none;">
         <div class="spinner"></div>
         <p>AI 正在分析您的信息...</p>
     </div>
 
-    <div id="toast" class="toast" style="display:none;"></div>
+    <div id="toast" class="toast" style="display:none;" role="status" aria-live="polite"></div>
 
     <footer class="footer">
-        <p>NutriAI · 数据仅供参考，具体饮食建议请咨询专业医生或营养师</p>
+        <p><strong>NutriAI</strong> · 认真吃饭，慢慢变好 · 数据仅供参考，具体饮食建议请咨询专业医生或营养师</p>
     </footer>
 
-    <script src="js/app.js"></script>
+    <script defer src="js/app.js?v=20261123a"></script>
+    <script defer src="js/assistant.js?v=20261118a"></script>
 </body>
 </html>

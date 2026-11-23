@@ -30,6 +30,19 @@ public class User {
     @Column(length = 50)
     private String displayName;
 
+    @Column(nullable = false)
+    private boolean emailVerified = false;
+
+    @Column(length = 100)
+    private String verificationToken;
+
+    private LocalDateTime verificationTokenExpiry;
+
+    @Column(length = 100)
+    private String resetPasswordToken;
+
+    private LocalDateTime resetPasswordTokenExpiry;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

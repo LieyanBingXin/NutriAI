@@ -28,6 +28,7 @@ public class AiServiceFactory {
     private final NutriAiProperties properties;
 
     private final Map<String, AiService> registry = new HashMap<>();
+    private volatile boolean fallbackLogged = false;
 
     @PostConstruct
     public void init() {
@@ -41,14 +42,21 @@ public class AiServiceFactory {
         String provider = properties.getAi().getProvider();
         AiService service = registry.get(provider);
         if (service == null) {
-            log.warn("未找到 provider={} 的 AI 服务，回退到 mock", provider);
+            logFallbackOnce("未找到 provider=" + provider + " 的 AI 服务");
             return registry.get("mock");
         }
         if (!service.isAvailable()) {
-            log.warn("AI 服务 provider={} 未就绪，回退到 mock", provider);
+            logFallbackOnce("AI 服务 provider=" + provider + " 未配置 API Key");
             return registry.get("mock");
         }
         return service;
+    }
+
+    /** 回退到 Mock 只提示一次，避免每条消息刷 WARN 日志 */
+    private void logFallbackOnce(String reason) {
+        if (fallbackLogged) return;
+        fallbackLogged = true;
+        log.warn("{}，已切换到离线 Mock 模式（此提示仅出现一次）", reason);
     }
 
     public AiService getService(String provider) {

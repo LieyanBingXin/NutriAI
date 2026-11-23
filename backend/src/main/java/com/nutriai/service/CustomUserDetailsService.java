@@ -19,8 +19,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("用户不存在: " + username));
+        String login = username == null ? "" : username.trim();
+        // 支持用户名或邮箱登录
+        User user = userRepository.findByUsername(login)
+                .or(() -> userRepository.findByEmail(login.toLowerCase(java.util.Locale.ROOT)))
+                .orElseThrow(() -> new UsernameNotFoundException("用户不存在: " + login));
 
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),

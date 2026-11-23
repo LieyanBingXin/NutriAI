@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/recommend/history")
+@RequestMapping("/api/history")
 @RequiredArgsConstructor
 public class HistoryController {
 
@@ -24,12 +24,13 @@ public class HistoryController {
     @GetMapping
     public ApiResponse<Map<String, Object>> list(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String q) {
         Long userId = authService.getCurrentUserId();
         if (userId == null) {
             throw new AiApiException(401, "请先登录");
         }
-        Page<HistoryRecordDto> records = historyService.listRecords(userId, page, size);
+        Page<HistoryRecordDto> records = historyService.listRecords(userId, page, size, q);
         Map<String, Object> result = new HashMap<>();
         result.put("content", records.getContent());
         result.put("page", records.getNumber());

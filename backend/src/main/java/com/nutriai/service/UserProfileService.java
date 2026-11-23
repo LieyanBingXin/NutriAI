@@ -34,9 +34,15 @@ public class UserProfileService {
         profile.setWeightKg(dto.getWeightKg());
         profile.setActivityLevel(dto.getActivityLevel());
         profile.setHealthGoal(dto.getHealthGoal());
-        profile.setTastePreference(dto.getTastePreference());
+        profile.setTastePreferencesJson(toJson(dto.getTastePreferences()));
+        profile.setRegion(dto.getRegion());
+        profile.setDailyCalorieGoal(dto.getDailyCalorieGoal());
+        profile.setProteinGoal(dto.getProteinGoal());
+        profile.setCarbsGoal(dto.getCarbsGoal());
+        profile.setFatGoal(dto.getFatGoal());
         profile.setFoodPreferencesJson(toJson(dto.getFoodPreferences()));
         profile.setFoodAllergiesJson(toJson(dto.getFoodAllergies()));
+        profile.setHealthConditionsJson(toJson(dto.getHealthConditions()));
 
         profile = profileRepository.save(profile);
         return toDto(profile);
@@ -62,9 +68,15 @@ public class UserProfileService {
         dto.setWeightKg(p.getWeightKg());
         dto.setActivityLevel(p.getActivityLevel());
         dto.setHealthGoal(p.getHealthGoal());
-        dto.setTastePreference(p.getTastePreference());
+        dto.setTastePreferences(fromJson(p.getTastePreferencesJson()));
+        dto.setRegion(p.getRegion());
+        dto.setDailyCalorieGoal(p.getDailyCalorieGoal());
+        dto.setProteinGoal(p.getProteinGoal());
+        dto.setCarbsGoal(p.getCarbsGoal());
+        dto.setFatGoal(p.getFatGoal());
         dto.setFoodPreferences(fromJson(p.getFoodPreferencesJson()));
         dto.setFoodAllergies(fromJson(p.getFoodAllergiesJson()));
+        dto.setHealthConditions(fromJson(p.getHealthConditionsJson()));
         dto.setUpdatedAt(p.getUpdatedAt());
         return dto;
     }

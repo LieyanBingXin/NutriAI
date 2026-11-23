@@ -1,0 +1,23 @@
+[Unit]
+Description=NutriAI backend
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nutriai
+Group=nutriai
+WorkingDirectory=/opt/nutriai/backend
+EnvironmentFile=/opt/nutriai/.env
+Environment=SPRING_PROFILE=prod
+Environment=TZ=Asia/Shanghai
+ExecStart=/usr/bin/java -XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8 -Duser.timezone=Asia/Shanghai -jar /opt/nutriai/backend/nutri-ai-0.1.0.jar
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+LimitNOFILE=65535
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

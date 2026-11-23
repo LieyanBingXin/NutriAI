@@ -21,10 +21,10 @@ public class RecommendationResponse {
 
     @Data
     public static class NutritionalAdvice {
-        private Double dailyCalories;
-        private Double proteinGrams;
-        private Double carbsGrams;
-        private Double fatGrams;
+        private Object dailyCalories;
+        private Object proteinGrams;
+        private Object carbsGrams;
+        private Object fatGrams;
         private String bmiCategory;
         private String metabolismNote;
     }
@@ -43,11 +43,11 @@ public class RecommendationResponse {
 
     @Data
     public static class NutritionalInfo {
-        private Double calories;
-        private Double protein;
-        private Double carbs;
-        private Double fat;
-        private Double fiber;
-        private Double sodium;
+        private Object calories;
+        private Object protein;
+        private Object carbs;
+        private Object fat;
+        private Object fiber;
+        private Object sodium;
     }
 }

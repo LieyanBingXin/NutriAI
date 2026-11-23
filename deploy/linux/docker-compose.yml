@@ -1,0 +1,79 @@
+name: nutriai
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: nutriai-db
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --max-connections=200
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - internal
+
+  app:
+    build:
+      context: ../../backend
+    container_name: nutriai-app
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      SPRING_PROFILE: prod
+      MYSQL_HOST: db
+      MYSQL_PORT: "3306"
+      TZ: Asia/Shanghai
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - app_logs:/app/logs
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/api/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 40s
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nutriai-nginx
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nutriai.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    networks:
+      - internal
+
+volumes:
+  db_data:
+  app_logs:
+
+networks:
+  internal:
+    driver: bridge

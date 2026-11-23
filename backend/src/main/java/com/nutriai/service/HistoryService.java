@@ -44,10 +44,14 @@ public class HistoryService {
         return recordRepository.save(record);
     }
 
-    public Page<HistoryRecordDto> listRecords(Long userId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        return recordRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
-                .map(this::toSummaryDto);
+    public Page<HistoryRecordDto> listRecords(Long userId, int page, int size, String keyword) {
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50),
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        String q = keyword == null ? "" : keyword.trim();
+        Page<RecommendationRecord> result = q.isEmpty()
+                ? recordRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
+                : recordRepository.searchByUserId(userId, q, pageable);
+        return result.map(this::toSummaryDto);
     }
 
     public HistoryDetailDto getDetail(Long userId, Long recordId) {
@@ -86,11 +90,16 @@ public class HistoryService {
 
     private HistoryRecordDto toSummaryDto(RecommendationRecord record) {
         String summary = null;
+        int recipesCount = 0;
         try {
             JsonNode root = objectMapper.readTree(record.getResponseJson());
             summary = root.path("summary").asText(null);
+            JsonNode recipes = root.path("recipes");
+            if (recipes.isArray()) {
+                recipesCount = recipes.size();
+            }
         } catch (Exception ignored) {
         }
-        return new HistoryRecordDto(record.getId(), record.getAiProvider(), summary, record.getCreatedAt());
+        return new HistoryRecordDto(record.getId(), record.getAiProvider(), summary, recipesCount, record.getCreatedAt());
     }
 }

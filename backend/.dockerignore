@@ -1,7 +1,11 @@
 target/
 !target/*.jar
-PROJECT_NOTES.md
-build_*.log
-run.log
+logs/
+data/
+*.log
+*.iml
 .idea/
 .vscode/
+.git/
+.gitignore
+README.md

@@ -36,7 +36,9 @@ public class UserProfileRequest {
 
     private List<String> foodAllergies;
 
-    private TastePreference tastePreference;
+    private List<TastePreference> tastePreferences;
+
+    private String region;
 
     private List<String> additionalNotes;
 

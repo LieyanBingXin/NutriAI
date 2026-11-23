@@ -14,5 +14,6 @@ public class HistoryRecordDto {
     private Long id;
     private String aiProvider;
     private String summary;
+    private int recipesCount;
     private LocalDateTime createdAt;
 }

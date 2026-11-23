@@ -2,7 +2,6 @@
 *.class
 *.jar
 *.war
-*.log
 
 # Maven
 target/
@@ -19,22 +18,32 @@ pom.xml.versionsBackup
 .settings/
 .project
 .classpath
+.trae/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Build
+# 日志与运行时数据
+*.log
+logs/
+
+# 环境变量 / 本地密钥（请放在本机，不要提交）
+.env
+.env.bat
+deploy/.env
+deploy/windows/config.ps1
+deploy/linux/certbot/
+deploy/linux/backups/
+deploy/linux/healthcheck.log
+backups/
+
+# 构建与临时文件
+wmvc*.txt
 build_err.log
 build_out.log
 run.log
-
-# Env
-.env
-# Office temp files
-~$*
-
-# Temp / test files
+server.pid
 cookies.txt
 *.tmp.json
 login.json
@@ -42,4 +51,19 @@ prof.json
 rec.json
 register.json
 server.py
-gen_ppt.py
+.smoke/
+.diag/
+.ui/
+backend/_*.txt
+backend/mvn.out
+backend/mvn.err
+logs/
+
+# Agent / 工具缓存
+.agent-cache/
+
+# 归档的废弃文件（保留备份，不参与构建）
+scrap/
+
+# 演示视频（体积大，不提交）
+docs/reports/*.mp4

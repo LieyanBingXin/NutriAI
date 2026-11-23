@@ -1,42 +1,119 @@
 server:
   port: ${PORT:8080}
+  # 位于 Nginx / Caddy 之后时，正确识别 https 与客户端 IP
+  forward-headers-strategy: framework
+  compression:
+    enabled: true
+    mime-types: application/json,text/html,text/css,text/javascript,application/javascript,image/svg+xml
+  error:
+    include-message: never
+    include-stacktrace: never
   servlet:
     session:
-      timeout: 30m
+      timeout: 7d
       cookie:
-        http-only: false
+        name: NUTRIAI_SESSION
+        http-only: true
         same-site: lax
+        secure: ${SESSION_COOKIE_SECURE:false}
 
 spring:
   application:
     name: nutri-ai
-  datasource:
-    url: jdbc:h2:mem:nutridb;MODE=MYSQL;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  h2:
-    console:
-      enabled: false
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    open-in-view: false
+  # 本项目使用 MySQL（默认 mysql profile）。
+  profiles:
+    active: ${SPRING_PROFILE:mysql}
   jackson:
     serialization:
       write-dates-as-timestamps: false
     deserialization:
       fail-on-unknown-properties: false
+  mvc:
+    async:
+      # AI 流式输出可能持续较久，避免被默认 30s 超时截断
+      request-timeout: 300000
+
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+    default-encoding: UTF-8
 
 nutriai:
   ai:
-    provider: openai-compat
+    provider: ${AI_PROVIDER:openai-compat}
     api-key: ${AI_API_KEY:}
     api-endpoint: ${AI_API_ENDPOINT:https://api.deepseek.com/v1}
     model: ${AI_MODEL:deepseek-chat}
+  mail:
+    from: ${MAIL_FROM:no-reply@nutriai.local}
+    base-url: ${APP_BASE_URL:http://localhost:8080}
+  # 允许跨域的前端来源，逗号分隔；留空表示仅同源（推荐）
+  cors:
+    allowed-origins: ${CORS_ORIGINS:}
+  # 首次启动且演示账号不存在时，自动创建 demo2026 演示数据
+  demo-data:
+    enabled: ${DEMO_DATA:true}
 
 logging:
   level:
     com.nutriai: ${LOG_LEVEL:INFO}
     org.springframework.security: WARN
+    org.springframework.mail: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:nutriai}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${MYSQL_USER:root}
+    # 本机开发默认密码；生产环境请用 MYSQL_PASSWORD 覆盖
+    password: ${MYSQL_PASSWORD:bingxin}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:nutriai}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&cachePrepStmts=true&useServerPrepStmts=true&rewriteBatchedStatements=true&maintainTimeStats=false&createDatabaseIfNotExist=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:bingxin}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+      pool-name: NutriAIHikariPool
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false

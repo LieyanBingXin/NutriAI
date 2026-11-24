@@ -61,6 +61,15 @@ public class MainActivity extends Activity {
                     view.loadUrl(OFFLINE_URL);
                 }
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                // 兜底：直接隐藏「安装到主屏幕」入口与 PWA 提示条，不依赖前端 UA 检测是否已部署
+                view.evaluateJavascript(
+                        "(function(){var b=document.querySelector('.more-foot .more-ghost[onclick*=\"installPwa\"]');if(b)b.style.display='none';var p=document.getElementById('pwaBanner');if(p)p.hidden=true;})()",
+                        null
+                );
+            }
         });
 
         if (savedInstanceState != null) {

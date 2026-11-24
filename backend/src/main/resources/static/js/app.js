@@ -139,6 +139,14 @@ function moreGo(name) {
 }
 
 function initPwa() {
+    // 套壳 APK：隐藏「安装到主屏幕」入口与提示条（WebView 里无法安装 PWA，也没这个必要）
+    if (/NutriAIApp/i.test(navigator.userAgent)) {
+        const installBtn = document.querySelector('.more-foot .more-ghost[onclick*="installPwa"]');
+        if (installBtn) installBtn.style.display = 'none';
+        const bannerEl = document.getElementById('pwaBanner');
+        if (bannerEl) bannerEl.hidden = true;
+        return;
+    }
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(() => { /* 离线增强失败不影响使用 */ });
     }

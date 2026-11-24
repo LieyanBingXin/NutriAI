@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F7F4EC">
+    <title>暂时离线 · NutriAI</title>
+    <style>
+        :root { --paper:#f7f4ec; --ink:#18211b; --muted:#748177; --forest:#173d2e; --line:#e4dfd2; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 28px;
+            font-family: "Inter", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--ink); background: radial-gradient(700px 420px at 20% 0%, #e6ecdf, transparent 60%), var(--paper);
+        }
+        .card { width: min(430px, 100%); background: #fffdf8; border: 1px solid var(--line); border-radius: 26px; padding: 34px 30px; box-shadow: 0 30px 60px -40px rgba(24,33,27,.5); text-align: center; }
+        .logo { width: 54px; height: 54px; border-radius: 17px; background: var(--forest); display: grid; place-items: center; margin: 0 auto 18px; }
+        .kicker { font-size: .62rem; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+        h1 { font-size: 1.5rem; letter-spacing: -.04em; margin: 8px 0 8px; }
+        p { color: var(--muted); font-size: .9rem; line-height: 1.8; margin: 0 0 22px; }
+        button { border: 0; border-radius: 99px; padding: 12px 22px; background: var(--forest); color: #f7f4ec; font: inherit; font-size: .86rem; font-weight: 700; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F7F4EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21C7 17 3 13.5 3 8.7 3 6 5 4 7.5 4c1.5 0 3 .8 4.5 2.7C13.5 4.8 15 4 16.5 4 19 4 21 6 21 8.7c0 4.8-4 8.3-9 12.3z"/></svg>
+    </div>
+    <div class="kicker">OFFLINE</div>
+    <h1>网络暂时走丢了</h1>
+    <p>NutriAI 需要联网才能加载内容，请检查网络后重试。</p>
+    <button onclick="location.href='https://nutri-ai.top/'">重新连接</button>
+</div>
+</body>
+</html>

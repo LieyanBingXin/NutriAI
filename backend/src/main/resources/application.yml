@@ -16,6 +16,8 @@ server:
         http-only: true
         same-site: lax
         secure: ${SESSION_COOKIE_SECURE:false}
+        # 持久 cookie：让 WebView 把会话写入本地，跨 App 重启保持登录（与服务端 timeout 对齐）
+        max-age: 7d
 
 spring:
   application:

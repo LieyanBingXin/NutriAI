@@ -39,6 +39,7 @@ deploy/linux/healthcheck.log
 backups/
 
 # 构建与临时文件
+*.apk
 wmvc*.txt
 build_err.log
 build_out.log
